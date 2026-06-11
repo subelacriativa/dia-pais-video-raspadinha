@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uma Surpresa Especial Para Você! ❤️</title>
+
+    <meta property="og:title" content="Uma Surpresa Especial Para Você! ❤️">
+    <meta property="og:description" content="Clique para ver a homenagem linda de Dia dos Pais que preparei!">
+    <meta property="og:image" content="https://subelacriativa.github.io/dia-pais-video-teste/foto-previa.jpg">
+    <meta property="og:url" content="https://subelacriativa.github.io/dia-pais-video-teste/">
+    <meta property="og:type" content="website">
+
     <style>
         * {
             box-sizing: border-box;
@@ -225,11 +232,11 @@
         <p>Guarde essa recordação ou envie direto para quem você ama!</p>
         
         <div class="lista-botoes">
-            <button id="btn-whatsapp-seguro" class="btn-opcao whatsapp">
+            <a href="https://api.whatsapp.com/send?text=Olha%20a%20surpresa%20linda%20que%20ganhei%20de%20Dia%20dos%20Pais!%20❤️%20https://subelacriativa.github.io/dia-pais-video-teste/" target="_blank" class="btn-opcao whatsapp">
                 <span>💬</span> Compartilhar no WhatsApp
-            </button>
+            </a>
             
-            <a href="https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4" download="Surpresa_SBC.mp4" target="_blank" class="btn-opcao baixar" id="btn-baixar-direto">
+            <a href="https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4" download="Surpresa_SBC.mp4" target="_blank" class="btn-opcao baixar">
                 <span>📥</span> Salvar Vídeo na Galeria
             </a>
             
@@ -257,12 +264,8 @@
         const btnVoltar = document.getElementById('btn-voltar');
         const btnRecomecarTudo = document.getElementById('btn-recomecar-tudo');
         const btnInstagram = document.getElementById('btn-instagram');
-        const btnWhatsappSeguro = document.getElementById('btn-whatsapp-seguro');
-        const btnBaixarDireto = document.getElementById('btn-baixar-direto');
 
         const legendaInstagram = "@subelacriativa #diadospais";
-        const textoWhatsapp = "Olha a surpresa em vídeo emocionante que ganhei de Dia dos Pais! ❤️";
-        const urlVideo = "https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4";
 
         // Fluxo de telas
         btnAbrirVideo.addEventListener('click', function() {
@@ -281,7 +284,9 @@
             video.play();
         });
 
+        // Correção para celulares antigos: pausa o vídeo ao sair da tela
         btnVoltar.addEventListener('click', function() {
+            video.pause();
             menuFimVideo.style.display = 'none';
             containerPlayer.style.display = 'none';
             telaFinal.style.display = 'block';
@@ -290,47 +295,6 @@
         btnRecomecarTudo.addEventListener('click', function() {
             telaFinal.style.display = 'none';
             telaInicial.style.display = 'block';
-        });
-
-        // Função auxiliar para disparar o download via JavaScript
-        function dispararDownloadGarantido() {
-            const linkTemporario = document.createElement('a');
-            linkTemporario.href = urlVideo;
-            linkTemporario.download = 'Surpresa_SBC.mp4';
-            linkTemporario.target = '_blank';
-            document.body.appendChild(linkTemporario);
-            linkTemporario.click();
-            document.body.removeChild(linkTemporario);
-        }
-
-        // NOVO FLUXO COMBINADO E CORRIGIDO DO WHATSAPP
-btnWhatsappSeguro.addEventListener('click', function() {
-    // 1. Dispara o download em segundo plano imediatamente
-    dispararDownloadGarantido();
-
-    // 2. Copia o texto limpo para a área de transferência (para o caso de o usuário querer colar manualmente)
-    navigator.clipboard.writeText(textoWhatsapp).then(() => {
-        
-        // 3. Alerta o usuário explicando os próximos passos
-        alert("📥 O download do vídeo começou!\n\nO WhatsApp vai abrir em seguida com a mensagem pronta. Escolha o contato, envie a mensagem e depois anexe o vídeo baixado!");
-        
-        // 4. Cria a URL correta codificando o texto para não quebrar a API do WhatsApp
-        const textoCodificado = encodeURIComponent(textoWhatsapp);
-        const urlLinkWhatsapp = `https://api.whatsapp.com/send?text=${textoCodificado}`;
-        
-        // 5. Abre o WhatsApp com o texto já injetado nativamente
-        window.open(urlLinkWhatsapp, "_blank");
-    }).catch(err => {
-        console.error("Erro ao copiar texto: ", err);
-        // Fallback caso a cópia falhe, mas ainda usando a URL corrigida com texto
-        const textoCodificado = encodeURIComponent(textoWhatsapp);
-        window.open(`https://api.whatsapp.com/send?text=${textoCodificado}`, "_blank");
-    });
-});
-
-        // Evento apenas para o botão de salvar direto (feedback visual opcional)
-        btnBaixarDireto.addEventListener('click', function() {
-            console.log("Download direto acionado pelo usuário.");
         });
 
         // SOLUÇÃO DO INSTAGRAM
