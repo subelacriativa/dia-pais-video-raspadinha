@@ -95,7 +95,7 @@
 
         .btn-principal:active { transform: scale(0.98); }
 
-        /* TELA DO JOGO QUEBRA-CABEÇA */
+        /* TELA DA RASPADINHA */
         #tela-jogo {
             background: white;
             border-radius: 24px;
@@ -114,42 +114,54 @@
             font-size: 1rem;
         }
 
-        /* Tabuleiro do Jogo (3x3 para 8 peças + 1 espaço vazio) */
-        .tabuleiro {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            background: #e2e8f0;
-            padding: 10px;
-            border-radius: 16px;
-            margin: 0 auto 20px auto;
+        /* Área da Raspadinha (Container que segura o fundo e a cobertura) */
+        .container-raspadinha {
+            position: relative;
             width: 280px;
             height: 280px;
+            margin: 0 auto 20px auto;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            user-select: none;
         }
 
-        .peca {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: white;
-            font-size: 1.8rem;
-            font-weight: bold;
+        /* O que fica ESCONDIDO atrás (Texto de vitória) */
+        .fundo-raspadinha {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff5f5;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .fundo-raspadinha .emoji {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+        }
+
+        .fundo-raspadinha .texto-sucesso {
+            color: #e11d48;
+            font-size: 1.4rem;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+
+        /* A camada cinza/dourada que será raspada */
+        #canvas-raspadinha {
+            position: absolute;
+            top: 0;
+            left: 0;
             cursor: pointer;
-            user-select: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        .peca:active {
-            transform: scale(0.95);
-        }
-
-        .peca.vazia {
-            background: transparent;
-            box-shadow: none;
-            cursor: default;
+            z-index: 2;
+            touch-action: none; /* Impede o celular de rolar a página enquanto raspa */
         }
 
         /* EFEITO DE FOGOS DE ARTIFÍCIO */
@@ -159,14 +171,12 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 10005;
             display: none;
             justify-content: center;
             align-items: center;
             color: white;
-            font-size: 2rem;
-            font-weight: bold;
             pointer-events: none;
         }
 
@@ -296,23 +306,30 @@
         </div>
         <p class="desafio-texto">Ah, mas para ver minha homenagem não vai ser tão fácil assim... 😉</p>
         <button class="btn-principal" id="btn-ir-jogo">
-            <span>🧩</span> CLIQUE AQUI
+            <span>🎉</span> CLIQUE AQUI
         </button>
         <div class="rodape">SU BELA CRIATIVA</div>
     </div>
 
     <div id="tela-jogo">
-        <h1>Desafio do Pai! 🧠</h1>
-        <p>Organize os números de 1 a 8 para liberar seu vídeo:</p>
-        <div class="tabuleiro" id="tabuleiro-jogo">
+        <h1>Raspadinha do Pai! 🎁</h1>
+        <p>Use o dedo para raspar a tela e liberar sua surpresa:</p>
+        
+        <div class="container-raspadinha">
+            <div class="fundo-raspadinha">
+                <span class="emoji">🔓✨</span>
+                <span class="texto-sucesso">VÍDEO LIBERADO!<br>PREPARE O CORAÇÃO!</span>
             </div>
+            <canvas id="canvas-raspadinha" width="280" height="280"></canvas>
+        </div>
+        
         <div class="rodape">SU BELA CRIATIVA</div>
     </div>
 
     <div id="efeito-fogos">
         <div style="text-align: center;">
-            <p style="font-size: 3rem;">🎉 PARABÉNS! 🎉</p>
-            <p style="font-size: 1.2rem; margin-top: 10px; font-weight: normal;">Preparando sua homenagem...</p>
+            <p style="font-size: 3rem; font-weight: bold;">🎉 PARABÉNS! 🎉</p>
+            <p style="font-size: 1.3rem; margin-top: 10px; font-weight: normal;">Abrindo sua homenagem...</p>
         </div>
     </div>
 
@@ -358,7 +375,6 @@
         const containerPlayer = document.getElementById('container-player');
         const menuFimVideo = document.getElementById('menu-fim-video');
         const telaFinal = document.getElementById('tela-final');
-        const tabuleiro = document.getElementById('tabuleiro-jogo');
         
         const video = document.getElementById('video-principal');
         
@@ -370,95 +386,151 @@
 
         const legendaInstagram = "@subelacriativa #diadospais";
 
-        // CONFIGURAÇÃO DO JOGO QUEBRA-CABEÇA (Slide Puzzle)
-        // Estado correto que vence o jogo: [1, 2, 3, 4, 5, 6, 7, 8, ""]
-        const estadoVitoria = "1,2,3,4,5,6,7,8,";
-        // Começa embaralhado de forma solucionável de propósito para ser rápido
-        let pecasAtuais = ["1", "2", "3", "4", "5", "", "7", "8", "6"]; 
+        // CONFIGURAÇÃO DA RASPADINHA DIGITAL
+        const canvas = document.getElementById('canvas-raspadinha');
+        const ctx = canvas.getContext('2d');
+        let raspando = false;
+        let jogoConcluido = false;
 
-        function desenharTabuleiro() {
-            tabuleiro.innerHTML = "";
-            pecasAtuais.forEach((num, index) => {
-                const div = document.createElement('div');
-                div.classList.add('peca');
-                if (num === "") {
-                    div.classList.add('vazia');
-                } else {
-                    div.innerText = num;
-                    div.addEventListener('click', () => moverPeca(index));
+        // Inicia e desenha a camada cinza metalizada com textura
+        function inicializarRaspadinha() {
+            jogoConcluido = false;
+            
+            // Cor da cobertura (Cinza Prata elegante)
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = '#b8b8b8'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Adiciona um efeito brilhante/textura na raspadinha para parecer real
+            ctx.fillStyle = '#cfcfcf';
+            for (let i = 0; i < canvas.width; i += 4) {
+                for (let j = 0; j < canvas.height; j += 4) {
+                    if (Math.random() > 0.5) {
+                        ctx.fillRect(i, j, 2, 2);
+                    }
                 }
-                tabuleiro.appendChild(div);
-            });
-        }
-
-        function moverPeca(index) {
-            const linhasVizinhas = [
-                [1, 3],       // Index 0 pode mover para 1 ou 3
-                [0, 2, 4],    // Index 1 pode mover para 0, 2 ou 4
-                [1, 5],       // Index 2 pode mover para 1 ou 5
-                [0, 4, 6],    // Index 3 pode mover para 0, 4 ou 6
-                [1, 3, 5, 7], // Index 4 pode mover para 1, 3, 5 ou 7
-                [2, 4, 8],    // Index 5 pode mover para 2, 4 ou 8
-                [3, 7],       // Index 6 pode mover para 3 ou 7
-                [4, 6, 8],    // Index 7 pode mover para 4, 6 ou 8
-                [5, 7]        // Index 8 pode mover para 5 ou 7
-            ];
-
-            // Verifica se o espaço vazio está por perto
-            const vizinhos = linhasVizinhas[index];
-            const indexVazio = pecasAtuais.indexOf("");
-
-            if (vizinhos.includes(indexVazio)) {
-                // Troca de lugar com o espaço vazio
-                pecasAtuais[indexVazio] = pecasAtuais[index];
-                pecasAtuais[index] = "";
-                desenharTabuleiro();
-                verificarVitoria();
             }
+
+            // Configura o texto que fica escrito EM CIMA da raspadinha
+            ctx.fillStyle = '#555555';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('RASPE AQUI COM O DEDO', canvas.width / 2, canvas.height / 2 + 5);
         }
 
-        function verificarVitoria() {
-            if (pecasAtuais.toString() === estadoVitoria) {
+        // Lógica para detecção do toque e ato de raspar
+        function obterCoordenadas(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Verifica se é toque de celular ou clique de mouse
+            const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clienteX - rect.left,
+                y: clienteY - rect.top
+            };
+        }
+
+        function iniciarRaspa(e) {
+            if (jogoConcluido) return;
+            raspando = true;
+            raspar(e);
+        }
+
+        function pararRaspa() {
+            raspando = false;
+            if (!jogoConcluido) verificarPorcentagemRaspada();
+        }
+
+        function raspar(e) {
+            if (!raspando || jogoConcluido) return;
+            e.preventDefault();
+
+            const pos = obterCoordenadas(e);
+            
+            // O segredo da raspadinha: 'destination-out' apaga os pixels desenhados
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2); // Raio do "dedo" que raspa
+            ctx.fill();
+        }
+
+        // Calcula o quanto da tela já foi limpo
+        function verificarPorcentagemRaspada() {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imgData.data;
+            let pixelsApagados = 0;
+
+            // Percorre os pixels verificando a transparência (Alpha)
+            for (let i = 3; i < pixels.length; i += 4) {
+                if (pixels[i] === 0) {
+                    pixelsApagados++;
+                }
+            }
+
+            const totalPixels = canvas.width * canvas.height;
+            const porcentagem = (pixelsApagados / totalPixels) * 100;
+
+            // Se o pai raspar mais de 45% da tela, considera vitória automática para facilitar
+            if (porcentagem > 45) {
+                jogoConcluido = true;
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpa o resto do canvas
                 acionarSucesso();
             }
         }
 
+        // Eventos para Computador e Celular
+        canvas.addEventListener('mousedown', iniciarRaspa);
+        canvas.addEventListener('mousemove', raspar);
+        window.addEventListener('mouseup', pararRaspa);
+
+        canvas.addEventListener('touchstart', iniciarRaspa);
+        canvas.addEventListener('touchmove', raspar);
+        window.addEventListener('touchend', pararRaspa);
+
+
         // FOGOS DE ARTIFÍCIO E VIBRAÇÃO
         function acionarSucesso() {
-            // 1. Ativa a vibração do celular (se o dispositivo suportar)
+            // 1. Ativa a vibração física do celular (padrão de festa)
             if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200, 100, 300]); // Padrão de pulsos de vibração
+                navigator.vibrate([200, 100, 200, 100, 300]);
             }
 
-            // 2. Mostra tela de fogos
-            telaJogo.style.display = 'none';
-            efeitoFogos.style.display = 'flex';
-            criarFogos();
-
-            // 3. Após 3 segundos, vai para o vídeo
+            // 2. Transição para tela escura com fogos de artifício
             setTimeout(() => {
-                efeitoFogos.style.display = 'none';
-                containerPlayer.style.display = 'flex';
-                video.play().catch(err => console.log("Erro ao reproduzir automaticamente:", err));
-            }, 3200);
+                telaJogo.style.display = 'none';
+                efeitoFogos.style.display = 'flex';
+                criarFogos();
+
+                // 3. Inicia o vídeo após 3.2 segundos de comemoração
+                setTimeout(() => {
+                    efeitoFogos.style.display = 'none';
+                    containerPlayer.style.display = 'flex';
+                    video.play().catch(err => console.log("Erro ao reproduzir automaticamente:", err));
+                }, 3200);
+            }, 400); // Pequeno delay pós-raspa para o pai ler o texto de sucesso
         }
 
         function criarFogos() {
             const cores = ['#ff5e62', '#ff9966', '#25D366', '#3b82f6', '#facc15', '#a855f7'];
-            for (let i = 0; i < 60; i++) {
+            const container = efetoFogos = document.getElementById('efeito-fogos');
+            
+            // Remove fogos antigos se houver
+            const fogosAntigos = container.querySelectorAll('.fogo');
+            fogosAntigos.forEach(f => f.remove());
+
+            for (let i = 0; i < 65; i++) {
                 const fogo = document.createElement('div');
                 fogo.classList.add('fogo');
                 fogo.style.backgroundColor = cores[Math.floor(Math.random() * cores.length)];
                 fogo.style.left = '50%';
                 fogo.style.top = '50%';
                 
-                // Gera direções aleatórias para a explosão
                 const angulo = Math.random() * Math.PI * 2;
-                const distancia = 80 + Math.random() * 120;
+                const distancia = 70 + Math.random() * 140;
                 fogo.style.setProperty('--x', `${Math.cos(angulo) * distancia}px`);
                 fogo.style.setProperty('--y', `${Math.sin(angulo) * distancia}px`);
                 
-                efeitoFogos.appendChild(fogo);
+                container.appendChild(fogo);
             }
         }
 
@@ -466,9 +538,7 @@
         btnIrJogo.addEventListener('click', function() {
             telaInicial.style.display = 'none';
             telaJogo.style.display = 'block';
-            // Reinicia o tabuleiro sempre que entra na tela do jogo
-            pecasAtuais = ["1", "2", "3", "4", "5", "", "7", "8", "6"];
-            desenharTabuleiro();
+            inicializarRaspadinha(); // Prepara o canvas cinza
         });
 
         video.addEventListener('ended', function() {
