@@ -149,6 +149,7 @@
             color: #64748b;
             font-size: 0.95rem;
             line-height: 1.4;
+            margin-bottom: 5px;
         }
 
         .lista-botoes {
@@ -176,8 +177,8 @@
         }
 
         .btn-opcao:active { transform: scale(0.98); }
-        .btn-opcao.baixar { background: #3b82f6; color: white; border: none; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-        .btn-opcao.whatsapp { background: #25D366; color: white; border: none; }
+        .btn-opcao.whatsapp { background: #25D366; color: white; border: none; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); }
+        .btn-opcao.baixar { background: #3b82f6; color: white; border: none; }
         .btn-opcao.instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color: white; border: none; }
 
         @keyframes surgir {
@@ -221,16 +222,16 @@
     <div id="tela-final">
         <span class="emoji-presente">🎁</span>
         <h1>Gostou da Surpresa?</h1>
-        <p>Siga os passos abaixo para enviar o <b>arquivo do vídeo</b> para a família sem precisar de links suspeitos!</p>
+        <p>Guarde essa recordação ou envie direto para quem você ama!</p>
         
         <div class="lista-botoes">
-            <a href="https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4" download="Surpresa_SBC.mp4" target="_blank" class="btn-opcao baixar">
-                <span>📥</span> 1º PASSO: Baixar o Vídeo na Galeria
-            </a>
-            
             <button id="btn-whatsapp-seguro" class="btn-opcao whatsapp">
-                <span>💬</span> 2º PASSO: Enviar no WhatsApp
+                <span>💬</span> Compartilhar no WhatsApp
             </button>
+            
+            <a href="https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4" download="Surpresa_SBC.mp4" target="_blank" class="btn-opcao baixar" id="btn-baixar-direto">
+                <span>📥</span> Salvar Vídeo na Galeria
+            </a>
             
             <button id="btn-instagram" class="btn-opcao instagram">
                 <span>📸</span> Compartilhar no Instagram
@@ -257,9 +258,11 @@
         const btnRecomecarTudo = document.getElementById('btn-recomecar-tudo');
         const btnInstagram = document.getElementById('btn-instagram');
         const btnWhatsappSeguro = document.getElementById('btn-whatsapp-seguro');
+        const btnBaixarDireto = document.getElementById('btn-baixar-direto');
 
         const legendaInstagram = "@subelacriativa #diadospais";
         const textoWhatsapp = "Olha a surpresa em vídeo emocionante que ganhei de Dia dos Pais! ❤️";
+        const urlVideo = "https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4";
 
         // Fluxo de telas
         btnAbrirVideo.addEventListener('click', function() {
@@ -289,24 +292,44 @@
             telaInicial.style.display = 'block';
         });
 
-        // NOVO FLUXO DO WHATSAPP SEGURO
+        // Função auxiliar para disparar o download via JavaScript
+        function dispararDownloadGarantido() {
+            const linkTemporario = document.createElement('a');
+            linkTemporario.href = urlVideo;
+            linkTemporario.download = 'Surpresa_SBC.mp4';
+            linkTemporario.target = '_blank';
+            document.body.appendChild(linkTemporario);
+            linkTemporario.click();
+            document.body.removeChild(linkTemporario);
+        }
+
+        // NOVO FLUXO COMBINADO DO WHATSAPP
         btnWhatsappSeguro.addEventListener('click', function() {
+            // 1. Dispara o download em segundo plano imediatamente
+            dispararDownloadGarantido();
+
+            // 2. Copia o texto para a área de transferência
             navigator.clipboard.writeText(textoWhatsapp).then(() => {
-                alert("✨ Texto copiado com sucesso!\n\nO WhatsApp vai abrir agora. Escolha para quem quer enviar, anexe o vídeo que você baixou no 1º Passo e cole a linda legenda que preparamos para você!");
+                // 3. Alerta o usuário explicando os próximos passos
+                alert("📥 O download do vídeo começou!\n\nO WhatsApp vai abrir em seguida. Escolha o contato, clique no ícone de anexo (clipe/câmera) para selecionar o vídeo baixado e cole a legenda emocionante que já copiamos para você!");
                 
-                // Abre o WhatsApp limpo para o usuário escolher o contato e anexar o arquivo local
+                // 4. Redireciona para o app do WhatsApp
                 window.open("https://api.whatsapp.com/send", "_blank");
             }).catch(err => {
                 console.error("Erro ao copiar texto: ", err);
-                // Caso o navegador bloqueie a cópia, apenas abre o WhatsApp
                 window.open("https://api.whatsapp.com/send", "_blank");
             });
+        });
+
+        // Evento apenas para o botão de salvar direto (feedback visual opcional)
+        btnBaixarDireto.addEventListener('click', function() {
+            console.log("Download direto acionado pelo usuário.");
         });
 
         // SOLUÇÃO DO INSTAGRAM
         btnInstagram.addEventListener('click', function() {
             navigator.clipboard.writeText(legendaInstagram).then(() => {
-                alert("✨ O @ da loja foi copiado!\n\nSe você tiver o app do Instagram, ele abrirá direto nos Stories. Caso use pelo navegador, basta abrir o site do Instagram, ir em criar Story, selecionar o vídeo baixado e colar a marcação!");
+                alert("✨ O @ da loja foi copiado!\n\nSe você tiver o app do Instagram, ele abrirá direto nos Stories. Selecione o vídeo na sua galeria e cole a marcação!");
                 
                 const tempoInicial = Date.now();
                 window.location.href = "instagram://story-camera";
