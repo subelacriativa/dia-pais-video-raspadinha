@@ -114,7 +114,7 @@
             font-size: 1rem;
         }
 
-        /* Área da Raspadinha (Container que segura o fundo e a cobertura) */
+        /* Área da Raspadinha */
         .container-raspadinha {
             position: relative;
             width: 280px;
@@ -124,22 +124,23 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             overflow: hidden;
             user-select: none;
+            background: #fff5f5;
         }
 
-        /* O que fica ESCONDIDO atrás (Texto de vitória) */
+        /* O que fica ESCONDIDO atrás */
         .fundo-raspadinha {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #fff5f5;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 20px;
             text-align: center;
+            z-index: 1;
         }
 
         .fundo-raspadinha .emoji {
@@ -154,14 +155,14 @@
             line-height: 1.3;
         }
 
-        /* A camada cinza/dourada que será raspada */
+        /* A camada cinza que será raspada */
         #canvas-raspadinha {
             position: absolute;
             top: 0;
             left: 0;
             cursor: pointer;
             z-index: 2;
-            touch-action: none; /* Impede o celular de rolar a página enquanto raspa */
+            touch-action: none;
         }
 
         /* EFEITO DE FOGOS DE ARTIFÍCIO */
@@ -391,17 +392,16 @@
         const ctx = canvas.getContext('2d');
         let raspando = false;
         let jogoConcluido = false;
+        let jaRaspouAlgumaVez = false; // Nova trava de segurança contra erros de load
 
-        // Inicia e desenha a camada cinza metalizada com textura
         function inicializarRaspadinha() {
             jogoConcluido = false;
+            jaRaspouAlgumaVez = false;
             
-            // Cor da cobertura (Cinza Prata elegante)
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = '#b8b8b8'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Adiciona um efeito brilhante/textura na raspadinha para parecer real
             ctx.fillStyle = '#cfcfcf';
             for (let i = 0; i < canvas.width; i += 4) {
                 for (let j = 0; j < canvas.height; j += 4) {
@@ -411,17 +411,14 @@
                 }
             }
 
-            // Configura o texto que fica escrito EM CIMA da raspadinha
             ctx.fillStyle = '#555555';
             ctx.font = 'bold 16px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('RASPE AQUI COM O DEDO', canvas.width / 2, canvas.height / 2 + 5);
         }
 
-        // Lógica para detecção do toque e ato de raspar
         function obterCoordenadas(e) {
             const rect = canvas.getBoundingClientRect();
-            // Verifica se é toque de celular ou clique de mouse
             const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
             const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
             return {
@@ -433,12 +430,16 @@
         function iniciarRaspa(e) {
             if (jogoConcluido) return;
             raspando = true;
+            jaRaspouAlgumaVez = true; // Só valida a raspagem quando o usuário clicar/tocar voluntariamente
             raspar(e);
         }
 
         function pararRaspa() {
             raspando = false;
-            if (!jogoConcluido) verificarPorcentagemRaspada();
+            // Só faz a conta matemática se o usuário realmente tiver começado a raspar
+            if (!jogoConcluido && jaRaspouAlgumaVez) {
+                verificarPorcentagemRaspada();
+            }
         }
 
         function raspar(e) {
@@ -447,20 +448,17 @@
 
             const pos = obterCoordenadas(e);
             
-            // O segredo da raspadinha: 'destination-out' apaga os pixels desenhados
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2); // Raio do "dedo" que raspa
+            ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Calcula o quanto da tela já foi limpo
         function verificarPorcentagemRaspada() {
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const pixels = imgData.data;
             let pixelsApagados = 0;
 
-            // Percorre os pixels verificando a transparência (Alpha)
             for (let i = 3; i < pixels.length; i += 4) {
                 if (pixels[i] === 0) {
                     pixelsApagados++;
@@ -470,15 +468,15 @@
             const totalPixels = canvas.width * canvas.height;
             const porcentagem = (pixelsApagados / totalPixels) * 100;
 
-            // Se o pai raspar mais de 45% da tela, considera vitória automática para facilitar
-            if (porcentagem > 45) {
+            // ALTERADO PARA 65% CONFORME SOLICITADO
+            if (porcentagem > 65) {
                 jogoConcluido = true;
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpa o resto do canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 acionarSucesso();
             }
         }
 
-        // Eventos para Computador e Celular
+        // Eventos
         canvas.addEventListener('mousedown', iniciarRaspa);
         canvas.addEventListener('mousemove', raspar);
         window.addEventListener('mouseup', pararRaspa);
@@ -487,34 +485,29 @@
         canvas.addEventListener('touchmove', raspar);
         window.addEventListener('touchend', pararRaspa);
 
-
         // FOGOS DE ARTIFÍCIO E VIBRAÇÃO
         function acionarSucesso() {
-            // 1. Ativa a vibração física do celular (padrão de festa)
             if (navigator.vibrate) {
                 navigator.vibrate([200, 100, 200, 100, 300]);
             }
 
-            // 2. Transição para tela escura com fogos de artifício
             setTimeout(() => {
                 telaJogo.style.display = 'none';
                 efeitoFogos.style.display = 'flex';
                 criarFogos();
 
-                // 3. Inicia o vídeo após 3.2 segundos de comemoração
                 setTimeout(() => {
                     efeitoFogos.style.display = 'none';
                     containerPlayer.style.display = 'flex';
                     video.play().catch(err => console.log("Erro ao reproduzir automaticamente:", err));
                 }, 3200);
-            }, 400); // Pequeno delay pós-raspa para o pai ler o texto de sucesso
+            }, 400);
         }
 
         function criarFogos() {
             const cores = ['#ff5e62', '#ff9966', '#25D366', '#3b82f6', '#facc15', '#a855f7'];
-            const container = efetoFogos = document.getElementById('efeito-fogos');
+            const container = document.getElementById('efeito-fogos');
             
-            // Remove fogos antigos se houver
             const fogosAntigos = container.querySelectorAll('.fogo');
             fogosAntigos.forEach(f => f.remove());
 
@@ -538,7 +531,7 @@
         btnIrJogo.addEventListener('click', function() {
             telaInicial.style.display = 'none';
             telaJogo.style.display = 'block';
-            inicializarRaspadinha(); // Prepara o canvas cinza
+            inicializarRaspadinha();
         });
 
         video.addEventListener('ended', function() {
