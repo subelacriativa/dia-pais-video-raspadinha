@@ -211,8 +211,8 @@
                 <span>💬</span> Compartilhar no WhatsApp
             </a>
             
-            <a href="https://instagram.com" target="_blank" class="btn-opcao instagram">
-                <span>📸</span> Abrir o Instagram
+            <a href="instagram://story-camera" id="btn-instagram" class="btn-opcao instagram">
+                <span>📸</span> Compartilhar no Instagram
             </a>
             
             <a href="https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4" download="Surpresa_SBC.mp4" target="_blank" class="btn-opcao baixar">
@@ -238,6 +238,10 @@
         const btnRepetir = document.getElementById('btn-repetir');
         const btnVoltar = document.getElementById('btn-voltar');
         const btnRecomecarTudo = document.getElementById('btn-recomecar-tudo');
+        const btnInstagram = document.getElementById('btn-instagram');
+
+        // Texto que será copiado para a área de transferência do pai ao clicar no Instagram
+        const textoParaCopiar = "@subelacriativa #diadospais";
 
         // 1. AÇÃO: Clicar no botão da Mensagem Inicial
         btnAbrirVideo.addEventListener('click', function() {
@@ -248,17 +252,17 @@
 
         // 2. DETECTOR: O vídeo chegou ao fim!
         video.addEventListener('ended', function() {
-            menuFimVideo.style.display = 'flex'; // Faz o menu surgir por cima do vídeo
+            menuFimVideo.style.display = 'flex';
         });
 
         // 3. AÇÃO: Assistir Novamente
         btnRepetir.addEventListener('click', function() {
             menuFimVideo.style.display = 'none';
-            video.currentTime = 0; // Volta o vídeo pro segundo 0
+            video.currentTime = 0;
             video.play();
         });
 
-        // 4. AÇÃO: Clicar em Voltar (Leva para a tela de Compartilhar)
+        // 4. AÇÃO: Clicar em Voltar (Leve para a tela de Compartilhar)
         btnVoltar.addEventListener('click', function() {
             menuFimVideo.style.display = 'none';
             containerPlayer.style.display = 'none';
@@ -269,6 +273,21 @@
         btnRecomecarTudo.addEventListener('click', function() {
             telaFinal.style.display = 'none';
             telaInicial.style.display = 'block';
+        });
+
+        // LÓGICA DA ALTERAÇÃO SUGERIDA: Copiar texto automático e avisar o usuário
+        btnInstagram.addEventListener('click', function(e) {
+            // Cria um elemento invisível para conseguir rodar a função de copiar no celular
+            const inputInvisivel = document.createElement('textarea');
+            inputInvisivel.value = textoParaCopiar;
+            document.body.appendChild(inputInvisivel);
+            inputInvisivel.select();
+            inputInvisivel.setSelectionRange(0, 99999); /* Para celulares */
+            document.execCommand('copy');
+            document.body.removeChild(inputInvisivel);
+
+            // Alerta amigável ensinando o pai a usar a facilidade
+            alert("✨ O @ da loja foi copiado para a sua área de transferência!\n\nAgora o Instagram vai abrir nos Stories. Puxe para cima, selecione o vídeo baixado e mantenha o dedo pressionado na tela para colar a marcação!");
         });
     </script>
 </body>
