@@ -81,7 +81,7 @@
 
         .btn-principal:active { transform: scale(0.98); }
 
-        /* CONTAINER DO PLAYER (TELA 2 - FALSA TELA CHEIA) */
+        /* CONTAINER DO PLAYER (TELA 2) */
         #container-player {
             position: fixed;
             top: 0;
@@ -102,7 +102,7 @@
             object-fit: contain;
         }
 
-        /* BOTÕES DO FIM DO VÍDEO (OVERLAY) */
+        /* BOTÕES DO FIM DO VÍDEO */
         #menu-fim-video {
             position: absolute;
             top: 0;
@@ -189,7 +189,6 @@
         <div class="rodape">SU BELA CRIATIVA</div>
     </div>
 
-
     <div id="container-player">
         <video id="video-principal" src="https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4" crossorigin="anonymous" playsinline webkit-playsinline></video>
         
@@ -199,7 +198,6 @@
             <button class="btn-principal" id="btn-voltar" style="background: #ef4444; box-shadow: none; max-width: 280px;">🚪 Voltar</button>
         </div>
     </div>
-
 
     <div id="tela-final">
         <span style="font-size: 3rem;">🎁</span>
@@ -211,9 +209,9 @@
                 <span>💬</span> Compartilhar no WhatsApp
             </a>
             
-            <a href="instagram://story-camera" id="btn-instagram" class="btn-opcao instagram">
+            <button id="btn-instagram" class="btn-opcao instagram">
                 <span>📸</span> Compartilhar no Instagram
-            </a>
+            </button>
             
             <a href="https://raw.githubusercontent.com/subelacriativa/ra/main/20260524_083410.mp4" download="Surpresa_SBC.mp4" target="_blank" class="btn-opcao baixar">
                 <span>📥</span> Baixar Vídeo de Recordação
@@ -240,54 +238,57 @@
         const btnRecomecarTudo = document.getElementById('btn-recomecar-tudo');
         const btnInstagram = document.getElementById('btn-instagram');
 
-        // Texto que será copiado para a área de transferência do pai ao clicar no Instagram
         const textoParaCopiar = "@subelacriativa #diadospais";
 
-        // 1. AÇÃO: Clicar no botão da Mensagem Inicial
+        // Fluxo de telas
         btnAbrirVideo.addEventListener('click', function() {
             telaInicial.style.display = 'none';
             containerPlayer.style.display = 'flex';
             video.play().catch(err => console.log("Erro ao reproduzir:", err));
         });
 
-        // 2. DETECTOR: O vídeo chegou ao fim!
         video.addEventListener('ended', function() {
             menuFimVideo.style.display = 'flex';
         });
 
-        // 3. AÇÃO: Assistir Novamente
         btnRepetir.addEventListener('click', function() {
             menuFimVideo.style.display = 'none';
             video.currentTime = 0;
             video.play();
         });
 
-        // 4. AÇÃO: Clicar em Voltar (Leve para a tela de Compartilhar)
         btnVoltar.addEventListener('click', function() {
             menuFimVideo.style.display = 'none';
             containerPlayer.style.display = 'none';
             telaFinal.style.display = 'block';
         });
 
-        // 5. AÇÃO: Recomeçar tudo do zero
         btnRecomecarTudo.addEventListener('click', function() {
             telaFinal.style.display = 'none';
             telaInicial.style.display = 'block';
         });
 
-        // LÓGICA DA ALTERAÇÃO SUGERIDA: Copiar texto automático e avisar o usuário
-        btnInstagram.addEventListener('click', function(e) {
-            // Cria um elemento invisível para conseguir rodar a função de copiar no celular
+        // SOLUÇÃO DO INSTAGRAM (Proteção contra navegadores sem App)
+        btnInstagram.addEventListener('click', function() {
+            // Copia o @ da loja
             const inputInvisivel = document.createElement('textarea');
             inputInvisivel.value = textoParaCopiar;
             document.body.appendChild(inputInvisivel);
             inputInvisivel.select();
-            inputInvisivel.setSelectionRange(0, 99999); /* Para celulares */
             document.execCommand('copy');
             document.body.removeChild(inputInvisivel);
 
-            // Alerta amigável ensinando o pai a usar a facilidade
-            alert("✨ O @ da loja foi copiado para a sua área de transferência!\n\nAgora o Instagram vai abrir nos Stories. Puxe para cima, selecione o vídeo baixado e mantenha o dedo pressionado na tela para colar a marcação!");
+            alert("✨ O @ da loja foi copiado!\n\nSe você tiver o app do Instagram, ele abrirá direto nos Stories. Caso use pelo navegador, basta abrir o site do Instagram, ir em criar Story, selecionar o vídeo baixado e colar a marcação!");
+
+            // Tenta abrir o App. Se falhar após 1.5 segundos, joga para o site móvel
+            const tempoInicial = Date.now();
+            window.location.href = "instagram://story-camera";
+
+            setTimeout(function() {
+                if (Date.now() - tempoInicial < 2000) {
+                    window.open("https://instagram.com", "_blank");
+                }
+            }, 1500);
         });
     </script>
 </body>
